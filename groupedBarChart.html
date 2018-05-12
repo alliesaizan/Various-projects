@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+    <head>
+        <meta charset="utf-8">
+        <title>Grouped Bar Chart</title>
+        <script type="text/javascript" src="https://d3js.org/d3.v5.js"></script>
+    </head>
+    <body >
+        <script type = "text/javascript">
+        
+            /* Source websites used:
+            https://bl.ocks.org/mbostock/3885304
+            https://stackoverflow.com/questions/39169948/grouped-bar-chart-from-json-data-instead-of-csv
+            */
+            
+            // Set the chart area margins
+            const margin = {top: 80, right: 100, bottom: 200, left: 80};
+            const width = 700 - margin.left - margin.right;
+            const height = 500 - margin.top - margin.bottom;
+            
+            var data = [
+            {"id": "Program Area 1", 
+            "Funding": 7.8,
+            "Remaining Balance": 3.6
+            },
+            {"id": "Program Area 2",
+            "Funding": 8.5,
+            "Remaining Balance": 2 
+            },
+            {"id": "Program Area 3",
+            "Funding": 6.7,
+            "Remaining Balance": 4.5
+            },
+            {"id": "Program Area 4", 
+            "Funding": 13.9,
+            "Remaining Balance": 3.4
+            },
+            {"id": "Program Area 5", 
+            "Funding": 4.3,
+            "Remaining Balance": 3.4
+            },
+            {"id": "Program Area 6", 
+            "Funding": 5.4,
+            "Remaining Balance": 1.5 
+            },
+            {"id": "Program Area 7",
+            "Funding": 3.7,
+            "Remaining Balance": 2 
+            },
+            {"id": "Program Area 8", 
+            "Funding": 6.8,
+            "Remaining Balance": 3.1
+            },
+            {"id": "Program Area 9", 
+            "Funding": 0.8,
+            "Remaining Balance": 0.5
+            }]
+        
+             //Set the scales           
+            var x = d3.scaleBand().range([0, width]).padding(0.2);
+            var y = d3.scaleLinear().range([height, 0]).nice();
+            var x1 = d3.scaleBand().padding(0.05);
+            var colors = d3.scaleOrdinal().range(["#C0CAF5", "#395CFF"]);
+            
+            //Create axes
+            var xAxis = d3.axisBottom(x);          
+            var yAxis = d3.axisLeft(y).ticks(10);
+            
+            
+            //Create the SVG element
+            //Append the group element to the SVG
+            //Move the SVG element to the top left margin
+            var svg = d3.select("body").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                //Bar chart will be drawn in this group element
+                .append("g")
+                //Translate the group element to leave room for the left and top margins
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            
+            //Prep the data
+            var keys = d3.keys(data[0]).filter(function(key) { return key !== "id"; });
+            
+            data.forEach(function(d) {
+                d.amounts = keys.map(function(name) { return {name: name, value: +d[name]}; });
+                });
+
+            //Scale domains
+            x.domain(data.map(function(d) { return d.id;}));
+            y.domain([0, d3.max(data, function (d) {return d3.max(d.amounts, function(d) {return d.value;}); } )]);
+            x1.domain(keys).range([0, x.bandwidth()]);
+            
+
+            //Add X-axis and label            
+            svg.append("g")
+                .classed("x axis", true)
+                //Translate the horizontal axis to the bottom of the chart
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis)
+                .selectAll("text")
+                .attr("transform", function(d) {
+                return "translate(" + this.getBBox().height*-1 +
+                    "," + this.getBBox().height + ")rotate(-45)";})
+                .attr("text-anchor", "end")
+                .attr("font-family", "sans-serif")
+                .attr("dx", "-.2em")
+                .attr("dy", "-.15em");
+
+            svg.append("text")
+                .attr("transform", "translate(" + (width/2 + 40) + "," + (height + margin.top + 20) + ")")
+                .attr("text-anchor", "end")
+                .text("Program Area")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 16)
+                .attr("font-weight", "bold");
+            
+            //Add Y-axis and label
+            svg.append("g")
+                .classed("y axis", true)
+                .call(yAxis.ticks(6))
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", 2)
+                .attr("y", 6)
+                .attr("dy", ".71em")
+                .attr("text-anchor", "start");
+            
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left + 20)    
+                .attr("x", 0- (height/2 - 40))
+                .attr("dy", "1em")
+                .attr("text-anchor", "end")
+                .text("Amount (millions)")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 16)
+                .attr("font-weight", "bold");
+
+            //Add title
+            svg.append("text")
+                .attr("x", (width/2))
+                .attr("y", 0 - (margin.top/2))
+                .attr("text-anchor", "middle")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 20)
+                .attr("font-weight", "bold")
+                .text("Funds available by program area");
+            
+            
+            //Add the bars to the SVG element
+            var ids = svg.selectAll(".id")
+                .data(data)
+                .enter().append("g")
+                .attr("class", "id")
+                .attr("transform", function(d) {return "translate(" + x(d.id) +",0)";});
+            
+            ids.selectAll("rect")
+                .data(function(d) {return d.amounts;})
+                .enter().append("rect")
+                .attr("x", function(d) {return x1(d.name);})
+                .attr("y", function(d) {return y(d.value);})
+                .attr("width", x1.bandwidth())
+                .attr("height", function(d) {return height - y(d.value);})
+                .attr("fill", function(d) { return colors(d.name); } );
+            
+
+            //Add legend
+            var legend = svg.selectAll(".legend")
+                .data(keys.slice().reverse())
+                .enter().append("g")
+                .attr("class", "legend")
+                .attr("transform", function(d, i) {return "translate(0," + i * 20 + ")";});
+            
+            legend.append("rect")
+                .attr("x", width - 10)
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("fill", colors);
+            
+            legend.append("text")
+                .attr("x", width - 15)
+                .attr("y", 6)
+                .attr("dy", "0.32em")
+                .attr("font-family", "sans-serif")
+                .attr("text-anchor", "end")
+                .attr("font-size", 10)
+                .text(function(d) {return d;});
+
+        </script>
+    </body>
+</html>
