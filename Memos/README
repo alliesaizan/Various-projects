@@ -1,0 +1,4 @@
+This folder holds the project files for an analysis on the Democratic and Repbulican memos on Russian interference in the 2016 election. 
+The Python script cleans the text files, produces summary statistics, and runs a term frequency-inverse document frequency algorithm. 
+The goal is to determine which words are similar across memos, and which ideas both parties think are important. 
+Visit https://public.tableau.com/profile/allie.saizan#!/vizhome/Memos/Dash for the graphical analysis of the results.
